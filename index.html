@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SiggyBot — Cosmic AI Agent by Ritual Network</title>
+  <meta name="description" content="Meet Siggy, a multi-dimensional cosmic cat AI agent. Built by Skypots & Yuura, powered by Kimi AI. Chat on web or Discord.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ============================================ -->
+  <!-- LANDING PAGE -->
+  <!-- ============================================ -->
+  <div class="landing" id="landing">
+    <!-- Animated background particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Floating orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="landing-content">
+      <!-- Hero Section -->
+      <div class="hero">
+        <div class="hero-avatar-wrapper">
+          <div class="hero-ring hero-ring-1"></div>
+          <div class="hero-ring hero-ring-2"></div>
+          <div class="hero-ring hero-ring-3"></div>
+          <img src="siggy.png" alt="Siggy — Cosmic Cat AI" class="hero-avatar" id="hero-avatar">
+        </div>
+
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>Online & Ready</span>
+        </div>
+
+        <h1 class="hero-title">
+          <span class="hero-title-line">Meet</span>
+          <span class="hero-title-name">Siggy<span class="hero-title-bot">Bot</span></span>
+        </h1>
+
+        <p class="hero-subtitle">A multi-dimensional cosmic cat from the<br><span class="highlight">Ritual Network</span> multiverse</p>
+
+        <p class="hero-desc">Autonomous AI Agent • Onchain Inference • Cryptographic AI Systems</p>
+      </div>
+
+      <!-- Feature Cards -->
+      <div class="features">
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>Kimi AI Engine</h3>
+          <p>Powered by <strong>Kimi k2.5</strong> reasoning model via Jatevo API for deep, intelligent conversations</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎮</div>
+          <h3>Discord Bot</h3>
+          <p>Already live on Discord! Mention <strong>@Siggy</strong> and chat with the cosmic cat in your server</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3>Web Interface</h3>
+          <p>Built with <strong>Express.js</strong> backend & vanilla HTML/CSS/JS frontend for lightning-fast chat</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📚</div>
+          <h3>Ritual Knowledge</h3>
+          <p>Deep knowledge base about <strong>Ritual Network</strong> — architecture, EVM++, Infernet & more</p>
+        </div>
+      </div>
+
+      <!-- Creators Section -->
+      <div class="creators">
+        <p class="creators-label">Built with 💜 by</p>
+        <div class="creators-row">
+          <a href="https://x.com/0xskypots" target="_blank" rel="noopener" class="creator-link" id="link-skypots">
+            <svg class="x-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <span>Skypots</span>
+          </a>
+          <span class="creators-amp">&</span>
+          <a href="https://x.com/0xyuura" target="_blank" rel="noopener" class="creator-link" id="link-yuura">
+            <svg class="x-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <span>Yuura</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Enter CTA -->
+      <div class="enter-cta">
+        <button class="enter-btn" id="enter-btn">
+          <span class="enter-btn-text">Enter the Multiverse</span>
+          <span class="enter-btn-icon">→</span>
+        </button>
+        <p class="enter-hint">
+          <span class="kbd">Enter</span> or click to start chatting
+        </p>
+      </div>
+    </div>
+
+    <!-- Bottom gradient fade -->
+    <div class="landing-fade"></div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CHAT APP (Hidden initially) -->
+  <!-- ============================================ -->
+  <div class="app hidden" id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" id="back-btn" title="Back to landing">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="avatar">
+          <img src="siggy.png" alt="Siggy" id="siggy-avatar">
+          <span class="status-dot"></span>
+        </div>
+        <div class="header-info">
+          <h1>SiggyBot</h1>
+          <span class="header-status">
+            <span class="header-status-dot"></span>
+            Siggy Assistant · Online
+          </span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="clear-btn" title="New chat">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat Area -->
+    <main class="chat-area" id="chat-area">
+      <!-- Welcome message -->
+      <div class="welcome" id="welcome">
+        <img src="siggy.png" alt="Siggy" class="welcome-avatar">
+        <h2>Hi, I'm <span class="accent">SiggyBot</span> 🐱</h2>
+        <p>Your cosmic AI familiar from the Ritual Network multiverse.<br>Ask me anything about Ritual, or just vibe with a cosmic cat.</p>
+        <div class="quick-actions">
+          <button class="quick-btn" data-prompt="What is Project Ritual?">✦ What is Ritual?</button>
+          <button class="quick-btn" data-prompt="Apa itu EVM++?">⚡ EVM++</button>
+          <button class="quick-btn" data-prompt="What can SiggyBot do?">🔮 SiggyBot</button>
+          <button class="quick-btn" data-prompt="Siapa pembuat Siggy?">🐾 Creators</button>
+        </div>
+      </div>
+
+      <!-- Messages container -->
+      <div class="messages" id="messages"></div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="input-area">
+      <form class="input-form" id="input-form">
+        <div class="input-wrapper">
+          <textarea id="message-input" placeholder="Message SiggyBot..." rows="1" autofocus></textarea>
+          <button type="submit" class="send-btn" id="send-btn" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+          </button>
+        </div>
+        <span class="input-hint">Powered by Kimi AI · Built by Skypots & Yuura</span>
+      </form>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
