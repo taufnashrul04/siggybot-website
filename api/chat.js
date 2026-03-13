@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 // ============================================================
 // LOAD EXTERNAL DATA (User Stats)
@@ -311,7 +311,7 @@ async function callJatevo(messages, temperature = 0.8) {
 // ============================================================
 // VERCEL SERVERLESS HANDLER
 // ============================================================
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -363,15 +363,15 @@ export default async function handler(req, res) {
           }
           
           if (!targetUser && !isAskingInfo) {
-             knowledge = (knowledge ? knowledge + "\n\n" : "") + \`Info: Tidak ada username discord spesifik yang disebutkan oleh user. Minta user menyebutkan username discord mereka secara eksplisit dengan format seperti "cek kontribusi username_discord" atau "stats username_discord" karena ini website.\`;
+             knowledge = (knowledge ? knowledge + "\n\n" : "") + `Info: Tidak ada username discord spesifik yang disebutkan oleh user. Minta user menyebutkan username discord mereka secara eksplisit dengan format seperti "cek kontribusi username_discord" atau "stats username_discord" karena ini website.`;
           } else if (targetUser) {
-            knowledge = (knowledge ? knowledge + "\n\n" : "") + \`USER STATS DATA UNTUK USER INI (\${targetUser.username}):
-Total pesan yang dikirim: \${targetUser.messageCount} pesan.
-Pertama kali aktif: \${targetUser.firstMessage}
-Terakhir aktif: \${targetUser.lastMessage}
-Beri tahu user statistik tersebut dengan gaya bahasa khasmu. JAWAB SEMUA DETAILNYA, JANGAN BERAKTING TIDAK TAHU.\`;
+            knowledge = (knowledge ? knowledge + "\n\n" : "") + `USER STATS DATA UNTUK USER INI (${targetUser.username}):
+Total pesan yang dikirim: ${targetUser.messageCount} pesan.
+Pertama kali aktif: ${targetUser.firstMessage}
+Terakhir aktif: ${targetUser.lastMessage}
+Beri tahu user statistik tersebut dengan gaya bahasa khasmu. JAWAB SEMUA DETAILNYA, JANGAN BERAKTING TIDAK TAHU.`;
           } else if (!isAskingInfo) {
-            knowledge = (knowledge ? knowledge + "\n\n" : "") + \`Info: Tidak ada data kontribusi untuk target tersebut di system. (Sampaikan ke user bahwa dia tidak ada di sistem kontribusi/belum terdata).\`;
+            knowledge = (knowledge ? knowledge + "\n\n" : "") + `Info: Tidak ada data kontribusi untuk target tersebut di system. (Sampaikan ke user bahwa dia tidak ada di sistem kontribusi/belum terdata).`;
           }
         }
       }
