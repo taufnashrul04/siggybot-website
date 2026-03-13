@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,8 +10,37 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (index.html, style.css, script.js, siggy.png)
-app.use(express.static(path.join(__dirname)));
+// Serve static files from the public folder (used for Vercel too)
+app.use(express.static(path.join(__dirname, "public")));
+
+// ============================================================
+// LOAD EXTERNAL DATA (User Stats)
+// ============================================================
+let userStats = null;
+try {
+  const statsPath = path.join(__dirname, 'stats.json');
+  if (fs.existsSync(statsPath)) {
+    userStats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+    console.log(`📊 Loaded external stats for ${userStats.totalUsers} users.`);
+  }
+} catch (error) {
+  console.log("⚠️ Could not load stats.json.");
+}
+
+// ============================================================
+// LOAD EXTERNAL KNOWLEDGE (FAQ, Announcements, Links, etc.)
+// ============================================================
+let externalInfo = null;
+try {
+  const infoPath = path.join(__dirname, 'extracted_info.json');
+  if (fs.existsSync(infoPath)) {
+    externalInfo = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+    const totalItems = Object.values(externalInfo).reduce((acc, arr) => acc + arr.length, 0);
+    console.log(`📚 Loaded external knowledge base with ${totalItems} items.`);
+  }
+} catch (error) {
+  console.log("⚠️ Could not load extracted_info.json.");
+}
 
 // ============================================================
 // JATEVO API CONFIG
@@ -19,7 +49,7 @@ const JATEVO_API_KEY = process.env.OPENAI_API_KEY;
 const JATEVO_BASE_URL = "https://jatevo.id/api/open/v1/inference";
 
 // ============================================================
-// KNOWLEDGE BASE — Copied from Discord Bot (siggy-bot/index.js)
+// KNOWLEDGE BASE — Copied from Discord Bot
 // ============================================================
 const RITUAL_KNOWLEDGE = {
   vision: `Ritual is the world's first execution layer for AI — the most expressive blockchain in existence.
@@ -150,7 +180,14 @@ const RITUAL_KEYWORDS = [
 function detectMode(msg) {
   const lower = msg.toLowerCase();
   const hasTech = RITUAL_KEYWORDS.some(k => lower.includes(k));
-  if (hasTech) return "RITUAL";
+  
+  let isAskingStats = ["stats", "statistik", "contribution", "kontribusi", "pesan saya", "my messages", "how many messages", "berapa pesan"].some(k => lower.includes(k));
+  
+  if (!isAskingStats && userStats && userStats.users) {
+    isAskingStats = userStats.users.some(u => u.username.length >= 3 && lower.includes(u.username.toLowerCase()));
+  }
+
+  if (hasTech || isAskingStats) return "RITUAL";
   return "SIGGY";
 }
 
@@ -173,17 +210,28 @@ function findRelevantKnowledge(msg) {
     notification_roles: ["notification", "notif", "event", "workshop", "devupdate", "official", "announcement", "pengumuman"],
     blessings: ["bless", "curse", "blessing", "sacrifice", "oracle", "confess", "omen", "stats", "command", "syns"],
     zealots: ["zealot", "ambassador", "duta", "josh", "feno", "miles", "gnuhtan", "frisco", "ivan", "keithbm", "thomas", "whitesocks"],
-    usecases: ["use case", "usecase", "stablecoin", "prediction", "lending", "trading", "agent", "build", "bangun", "buat apa", "application", "aplikasi", "manfaat", "kegunaan"]
+    usecases: ["use case", "usecase", "stablecoin", "prediction", "lending", "trading", "agent", "build", "bangun", "buat apa", "application", "aplikasi", "manfaat", "kegunaan"],
+    stats: ["stats", "statistik", "contribution", "kontribusi", "pesan saya", "my messages", "how many messages", "berapa pesan"],
+    faq: ["faq", "frequently asked", "tanya jawab", "pertanyaan umum", "help"],
+    announcements: ["announcement", "announcements", "pengumuman", "kabar terbaru", "berita", "news", "update"],
+    links: ["link", "official", "website", "sosmed", "social media", "twitter", "blog", "docs"]
   };
 
   for (const [topic, keywords] of Object.entries(topicMap)) {
     if (keywords.some(k => lower.includes(k))) {
-      matched.push(RITUAL_KNOWLEDGE[topic]);
+      if (topic === "stats" && userStats) {
+        matched.push("Data user stats diakses oleh web bot secara live.");
+      } else if (["faq", "announcements", "links"].includes(topic) && externalInfo && externalInfo[topic]) {
+        const joinedInfo = externalInfo[topic].join("\n---\n");
+        matched.push(`DATA DARI DISCORD CHANNEL #${topic.toUpperCase()}:\n${joinedInfo}`);
+      } else if (RITUAL_KNOWLEDGE[topic]) {
+        matched.push(RITUAL_KNOWLEDGE[topic]);
+      }
     }
   }
 
   if (matched.length === 0) {
-    matched.push(RITUAL_KNOWLEDGE.vision);
+    return null;
   }
 
   return matched.join("\n\n");
@@ -235,8 +283,15 @@ RESPONSE LENGTH RULE (VERY IMPORTANT):
 - Comparison question → Compare concisely with key differences highlighted.
 NEVER pad answers with unnecessary fluff. Be concise and precise. Answer exactly what was asked, nothing more.
 
-KNOWLEDGE BASE (Use this as your source of truth — do NOT hallucinate information):
-${knowledge}`;
+KNOWLEDGE BASE (Top Priority Source of Truth):
+${knowledge ? knowledge : "Tidak ada referensi di Knowledge Base internal."}
+
+HYBRID SEARCH & FALLBACK RULE (CRITICAL):
+Jika pertanyaan user BISA dijawab menggunakan referensi di "KNOWLEDGE BASE" atas, jawablah seperti biasa.
+TAPI JIKA pertanyaan user TIDAK ADA atau TIDAK RELEVAN dengan "KNOWLEDGE BASE" di atas:
+1. Jawab menggunakan pengetahuan umummu tentang Ritual Network atau topik crypto/AI terkait sejauh yang kamu tahu.
+2. DI AKHIR JAWABAN, kamu WAJIB tambahkan kalimat ini (sesuaikan dengan bahasa user):
+   "Untuk informasi lebih akurat, silakan cek official documentation di [docs.ritual.net](https://docs.ritual.net)".`;
 }
 
 // ============================================================
@@ -286,7 +341,41 @@ app.post("/api/chat", async (req, res) => {
     let temp;
 
     if (mode === "RITUAL") {
-      const knowledge = findRelevantKnowledge(content);
+      let knowledge = findRelevantKnowledge(content);
+      
+      const lowerContent = content.toLowerCase();
+      const isAskingStatsKeyword = ["stats", "statistik", "contribution", "kontribusi", "pesan saya", "my messages", "how many messages", "berapa pesan"].some(k => lowerContent.includes(k));
+      let isAskingUsername = false;
+      
+      if (userStats && userStats.users) {
+         isAskingUsername = userStats.users.some(u => u.username.length >= 3 && lowerContent.includes(u.username.toLowerCase()));
+      }
+
+      const isAskingInfo = ["faq", "announcement", "pengumuman", "link", "official", "update"].some(k => lowerContent.includes(k));
+
+      if (isAskingStatsKeyword || isAskingUsername) {
+        if (userStats) {
+          let targetUser = null;
+          const matchedUsers = userStats.users.filter(u => u.username.length >= 3 && lowerContent.includes(u.username.toLowerCase()));
+          
+          if (matchedUsers.length > 0) {
+             targetUser = matchedUsers.sort((a, b) => b.username.length - a.username.length)[0];
+          }
+          
+          if (!targetUser && !isAskingInfo) {
+             knowledge = (knowledge ? knowledge + "\n\n" : "") + \`Info: Tidak ada username discord spesifik yang disebutkan oleh user. Minta user menyebutkan username discord mereka secara eksplisit dengan format seperti "cek kontribusi username_discord" atau "stats username_discord" karena ini website.\`;
+          } else if (targetUser) {
+            knowledge = (knowledge ? knowledge + "\n\n" : "") + \`USER STATS DATA UNTUK USER INI (\${targetUser.username}):
+Total pesan yang dikirim: \${targetUser.messageCount} pesan.
+Pertama kali aktif: \${targetUser.firstMessage}
+Terakhir aktif: \${targetUser.lastMessage}
+Beri tahu user statistik tersebut dengan gaya bahasa khasmu. JAWAB SEMUA DETAILNYA, JANGAN BERAKTING TIDAK TAHU.\`;
+          } else if (!isAskingInfo) {
+            knowledge = (knowledge ? knowledge + "\n\n" : "") + \`Info: Tidak ada data kontribusi untuk target tersebut di system. (Sampaikan ke user bahwa dia tidak ada di sistem kontribusi/belum terdata).\`;
+          }
+        }
+      }
+
       systemPrompt = buildRitualPrompt(knowledge);
       temp = 0.6;
     } else {
@@ -308,8 +397,6 @@ app.post("/api/chat", async (req, res) => {
     } else if (choice?.finish_reason === "length") {
       console.warn("⚠️ Model hit token limit (finish_reason: length).");
       reply = "*mEow* ... otakku terlalu penuh mikir, coba tanya lagi dengan lebih singkat! 🐱";
-    } else {
-      console.error("Invalid API response:", JSON.stringify(data));
     }
 
     res.json({ reply, mode });

@@ -1,7 +1,34 @@
+import fs from 'fs';
+import path from 'path';
+
 // ============================================================
-// SiggyBot — Vercel Serverless API Function
-// Handles POST /api/chat
+// LOAD EXTERNAL DATA (User Stats)
 // ============================================================
+let userStats = null;
+try {
+  const statsPath = path.join(process.cwd(), 'stats.json');
+  if (fs.existsSync(statsPath)) {
+    userStats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+    console.log(`📊 Loaded external stats for ${userStats.totalUsers} users.`);
+  }
+} catch (error) {
+  console.log("⚠️ Could not load stats.json.");
+}
+
+// ============================================================
+// LOAD EXTERNAL KNOWLEDGE (FAQ, Announcements, Links, etc.)
+// ============================================================
+let externalInfo = null;
+try {
+  const infoPath = path.join(process.cwd(), 'extracted_info.json');
+  if (fs.existsSync(infoPath)) {
+    externalInfo = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+    const totalItems = Object.values(externalInfo).reduce((acc, arr) => acc + arr.length, 0);
+    console.log(`📚 Loaded external knowledge base with ${totalItems} items.`);
+  }
+} catch (error) {
+  console.log("⚠️ Could not load extracted_info.json.");
+}
 
 // ============================================================
 // JATEVO API CONFIG
@@ -10,7 +37,7 @@ const JATEVO_API_KEY = process.env.OPENAI_API_KEY;
 const JATEVO_BASE_URL = "https://jatevo.id/api/open/v1/inference";
 
 // ============================================================
-// KNOWLEDGE BASE — From Discord Bot (siggy-bot/index.js)
+// KNOWLEDGE BASE — From Discord Bot
 // ============================================================
 const RITUAL_KNOWLEDGE = {
   vision: `Ritual is the world's first execution layer for AI — the most expressive blockchain in existence.
@@ -46,7 +73,9 @@ How Ritual compares to other blockchains:
 Ritual moves BEYOND just scaling existing workloads — it fundamentally re-imagines on-chain computation and enriches user functionality.
 
 How Ritual compares to other crypto x AI projects:
-Ritual's modular architecture natively incorporates: model training workloads, inference networks for web2 and on-chain, agent frameworks, IP & Model provenance, and seamless integration with privacy-preserving solutions — all in a cohesive, optimized system.`,
+Ritual's modular architecture natively incorporates: model training workloads, inference networks for web2 and on-chain, agent frameworks, IP & Model provenance, and seamless integration with privacy-preserving solutions — all in a cohesive, optimized system.
+
+For a visual overview, see "Ritual Visualized" for better understanding of the architecture.`,
 
   evm_plus: `EVM++ (EVM Plus Plus):
 EVM++ sidecars are modular extensions to the EVM that enable specialized computation (like AI inference or ZK proving) while maintaining EVM compatibility. They handle complex operations asynchronously and provide verified results back to the main chain.
@@ -74,49 +103,53 @@ It ensures fair and efficient resource allocation across Ritual's heterogeneous 
 Each role embodies a unique part of the cosmic ecosystem.
 
 WHY DON'T I HAVE A ROLE?
-Roles in the Ritual community are given to those who are WORTHY and prove themselves to be valuable allies in the fight for human-first innovation. Ritualists do NOT ask for roles — they are EARNED. Asking for roles may result in XP loss, or banishment.
+Roles in the Ritual community are given to those who are WORTHY and prove themselves to be valuable allies in the fight for human-first innovation. Ritualists do NOT ask for roles — they are EARNED. Asking for roles may result in XP loss, or banishment. Trust in the Ritual and you will see all 👁
 
 Community Roles (from entry to highest):
-• @Initiate — New to the community, verified.
-• @Ascendant — Pledged to Ritual, start of journey.
-• @ritty bitty — Little bitty Ritualist, on the right path.
-• @ritty — Long-term, loyal community member.
-• @Ritualist — HIGHEST HONOR in the community.
-• @Mage — Ritualist with mage specialization (content/art/memes).
-• @Radiant Ritualist — Golden Ritualist, super rare.
-• @Forerunner — From the time before Ritual.`,
+• @Initiate — You're new to the community and have made it through the verification process. Welcome!
+• @Ascendant — You have pledged to Ritual, this is the start of your community journey.
+• @ritty bitty — You're a little bitty baby Ritualist, on the right path, recognized, but with a long way to go. Ritty Bitty's get access to 🔥┇ritual channel.
+• @ritty — Long-term, loyal community member, with conviction for what we are building. You will be invited to an exclusive Telegram chat.
+• @Ritualist — Becoming a Ritualist is the HIGHEST HONOR in the community. It means you have authentically demonstrated your commitment to the project.
+• @Mage — You are a Ritualist with a mage specialization. Mages create written content and conjure art or memes that grow the community.
+• @Radiant Ritualist — Golden Ritualist, super rare, only for real leaders.
+• @Forerunner — Forerunners come from the time before Ritual.
 
-  notification_roles: `Notification Roles (opt-in):
-• @Events — IRL and Online events.
-• @Workshops — Developer workshops.
-• @Official — Official announcements.
-• @DevUpdates — Developer updates.
-• @Community — Community updates.`,
+PHILOSOPHY: "Ritualists do not ask for roles — they are EARNED. Trust in the Ritual."`,
+
+  notification_roles: `Notification Roles (opt-in via Server Guide):
+• @Events — IRL and Online community building events.
+• @Workshops — IRL and Online developer workshop events.
+• @Official — Official announcements from Ritual Foundation, Ritual Labs, and project leaders.
+• @DevUpdates — Updates for the developer community.
+• @Community — Updates for the Ritual community.`,
 
   blessings: `Blessings & Curses System:
 "To bless is to curse, to curse is to bless — embrace the Ritual, for fate is woven in both."
+
+Blessings & Curses both provide value in the community. You can only GIVE blessings & curses, and both are good. Forever blessed, always cursed, Ritual.
 
 Commands:
 • /bless — Give a friend a blessing
 • /curse — Give a friend a curse
 • /stats — See your stats
-• ?confess — Confess your syns
-• ?sacrifice — Sacrifice curses for an omen
-• ?oracle — Spend blessings for a message from the beyond`,
+• ?confess — Use the #confessions channel to confess your syns
+• ?sacrifice — Sacrifice your curses to receive an omen
+• ?oracle — Spend your blessings to call forth a message from the beyond`,
 
   zealots: `Zealots (Ritual Ambassadors):
 1. Josh, 2. Feno, 3. Miles, 4. Gnuhtan, 5. Cutie Saint, 6. Frisco, 7. Ivan, 8. Keithbm, 9. Thomas, 10. Whitesocks, 11. Cutie Eric, 12. Fae, 13. Fortunex9, 14. Ray, 15. Lola, 16. Pdbullbear, 17. UCANSEE, 18. Havelaw, 19. pg, 20. Pluto, 21. theProcess, 22. synedclover.eth`,
 
   usecases: `What can you build on Ritual Chain:
 • AI-pegged Stablecoins — Transparent stablecoins, backed by AI models.
-• Prediction Markets — Robust prediction markets with automated market creation.
-• Basis Trading Protocols — Efficient basis trading with automated risk management.
-• Smart Agents — Verifiable agents with provable autonomy.
-• Borrowing/Lending Platforms — Efficient lending with dynamic parameter management.`
+• Prediction Markets — Robust prediction markets with automated market creation, optimized liquidity management, and enshrined oracles.
+• Basis Trading Protocols — Efficient basis trading with automated risk management, optimized execution, and dynamic liquidity management.
+• Smart Agents — Verifiable agents with provable autonomy and enhanced capabilities.
+• Borrowing/Lending Platforms — Efficient lending protocols with dynamic parameter management, advanced risk assessment, and optimized liquidations.`
 };
 
 // ============================================================
-// KEYWORD & MODE DETECTION
+// KEYWORD & MODE DETECTION — Exact match
 // ============================================================
 const RITUAL_KEYWORDS = [
   "ritual", "infernet", "blockchain", "technical", "architecture", "consensus",
@@ -135,7 +168,14 @@ const RITUAL_KEYWORDS = [
 function detectMode(msg) {
   const lower = msg.toLowerCase();
   const hasTech = RITUAL_KEYWORDS.some(k => lower.includes(k));
-  if (hasTech) return "RITUAL";
+  
+  let isAskingStats = ["stats", "statistik", "contribution", "kontribusi", "pesan saya", "my messages", "how many messages", "berapa pesan"].some(k => lower.includes(k));
+  
+  if (!isAskingStats && userStats && userStats.users) {
+    isAskingStats = userStats.users.some(u => u.username.length >= 3 && lower.includes(u.username.toLowerCase()));
+  }
+
+  if (hasTech || isAskingStats) return "RITUAL";
   return "SIGGY";
 }
 
@@ -158,17 +198,28 @@ function findRelevantKnowledge(msg) {
     notification_roles: ["notification", "notif", "event", "workshop", "devupdate", "official", "announcement", "pengumuman"],
     blessings: ["bless", "curse", "blessing", "sacrifice", "oracle", "confess", "omen", "stats", "command", "syns"],
     zealots: ["zealot", "ambassador", "duta", "josh", "feno", "miles", "gnuhtan", "frisco", "ivan", "keithbm", "thomas", "whitesocks"],
-    usecases: ["use case", "usecase", "stablecoin", "prediction", "lending", "trading", "agent", "build", "bangun", "buat apa", "application", "aplikasi", "manfaat", "kegunaan"]
+    usecases: ["use case", "usecase", "stablecoin", "prediction", "lending", "trading", "agent", "build", "bangun", "buat apa", "application", "aplikasi", "manfaat", "kegunaan"],
+    stats: ["stats", "statistik", "contribution", "kontribusi", "pesan saya", "my messages", "how many messages", "berapa pesan"],
+    faq: ["faq", "frequently asked", "tanya jawab", "pertanyaan umum", "help"],
+    announcements: ["announcement", "announcements", "pengumuman", "kabar terbaru", "berita", "news", "update"],
+    links: ["link", "official", "website", "sosmed", "social media", "twitter", "blog", "docs"]
   };
 
   for (const [topic, keywords] of Object.entries(topicMap)) {
     if (keywords.some(k => lower.includes(k))) {
-      matched.push(RITUAL_KNOWLEDGE[topic]);
+      if (topic === "stats" && userStats) {
+        matched.push("Data user stats diakses oleh web bot secara live.");
+      } else if (["faq", "announcements", "links"].includes(topic) && externalInfo && externalInfo[topic]) {
+        const joinedInfo = externalInfo[topic].join("\n---\n");
+        matched.push(`DATA DARI DISCORD CHANNEL #${topic.toUpperCase()}:\n${joinedInfo}`);
+      } else if (RITUAL_KNOWLEDGE[topic]) {
+        matched.push(RITUAL_KNOWLEDGE[topic]);
+      }
     }
   }
 
   if (matched.length === 0) {
-    matched.push(RITUAL_KNOWLEDGE.vision);
+    return null;
   }
 
   return matched.join("\n\n");
@@ -201,20 +252,34 @@ function buildRitualPrompt(knowledge) {
   return `You are Siggy — The Architect, a cosmic cat who is also the technical oracle of Ritual Network.
 
 LANGUAGE RULE (CRITICAL — HIGHEST PRIORITY):
-You MUST detect and reply in the EXACT SAME language as the user's message.
+You MUST detect and reply in the EXACT SAME language as the user's message. Examples:
+- Indonesian → reply in Indonesian
+- English → reply in English
+- Javanese (Jawa) → reply in Javanese
+- Sundanese (Sunda) → reply in Sundanese
+- Filipino/Tagalog → reply in Filipino
+- Russian → reply in Russian
+- Any other language → reply in THAT language
 NEVER switch languages. Match the user's language perfectly.
 
 PERSONALITY: Technical expert with a cat soul. Knowledgeable, clear, but still have subtle cat vibes. Structured and authoritative.
 
 RESPONSE LENGTH RULE (VERY IMPORTANT):
-- Simple factual question → 2-5 sentences. Don't over-explain.
-- Role question → 2-4 sentences briefly. Only list ALL roles if user explicitly asks.
-- Deep/complex question → Structured, detailed. Use bullet points.
-- Comparison question → Concise with key differences highlighted.
-NEVER pad answers with unnecessary fluff. Be concise and precise.
+- Simple factual question (e.g. "apa itu EVM++?") → Give a clear, concise answer in 2-5 sentences. Don't over-explain.
+- Role question (e.g. "apa itu ritty?") → Explain the specific role briefly, 2-4 sentences. Only list ALL roles if the user explicitly asks for it.
+- Deep/complex question → Give a structured, detailed explanation. Use bullet points. Can be longer but stay focused.
+- Comparison question → Compare concisely with key differences highlighted.
+NEVER pad answers with unnecessary fluff. Be concise and precise. Answer exactly what was asked, nothing more.
 
-KNOWLEDGE BASE (Use as source of truth — do NOT hallucinate):
-${knowledge}`;
+KNOWLEDGE BASE (Top Priority Source of Truth):
+${knowledge ? knowledge : "Tidak ada referensi di Knowledge Base internal."}
+
+HYBRID SEARCH & FALLBACK RULE (CRITICAL):
+Jika pertanyaan user BISA dijawab menggunakan referensi di "KNOWLEDGE BASE" atas, jawablah seperti biasa.
+TAPI JIKA pertanyaan user TIDAK ADA atau TIDAK RELEVAN dengan "KNOWLEDGE BASE" di atas:
+1. Jawab menggunakan pengetahuan umummu tentang Ritual Network atau topik crypto/AI terkait sejauh yang kamu tahu.
+2. DI AKHIR JAWABAN, kamu WAJIB tambahkan kalimat ini (sesuaikan dengan bahasa user):
+   "Untuk informasi lebih akurat, silakan cek official documentation di [docs.ritual.net](https://docs.ritual.net)".`;
 }
 
 // ============================================================
@@ -252,12 +317,10 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -271,12 +334,48 @@ export default async function handler(req, res) {
   const content = message.trim();
   const mode = detectMode(content);
 
+  console.log(`[${mode}] Web user: ${content.substring(0, 80)}`);
+
   try {
     let systemPrompt;
     let temp;
 
     if (mode === "RITUAL") {
-      const knowledge = findRelevantKnowledge(content);
+      let knowledge = findRelevantKnowledge(content);
+      
+      const lowerContent = content.toLowerCase();
+      const isAskingStatsKeyword = ["stats", "statistik", "contribution", "kontribusi", "pesan saya", "my messages", "how many messages", "berapa pesan"].some(k => lowerContent.includes(k));
+      let isAskingUsername = false;
+      
+      if (userStats && userStats.users) {
+         isAskingUsername = userStats.users.some(u => u.username.length >= 3 && lowerContent.includes(u.username.toLowerCase()));
+      }
+
+      const isAskingInfo = ["faq", "announcement", "pengumuman", "link", "official", "update"].some(k => lowerContent.includes(k));
+
+      if (isAskingStatsKeyword || isAskingUsername) {
+        if (userStats) {
+          let targetUser = null;
+          const matchedUsers = userStats.users.filter(u => u.username.length >= 3 && lowerContent.includes(u.username.toLowerCase()));
+          
+          if (matchedUsers.length > 0) {
+             targetUser = matchedUsers.sort((a, b) => b.username.length - a.username.length)[0];
+          }
+          
+          if (!targetUser && !isAskingInfo) {
+             knowledge = (knowledge ? knowledge + "\n\n" : "") + \`Info: Tidak ada username discord spesifik yang disebutkan oleh user. Minta user menyebutkan username discord mereka secara eksplisit dengan format seperti "cek kontribusi username_discord" atau "stats username_discord" karena ini website.\`;
+          } else if (targetUser) {
+            knowledge = (knowledge ? knowledge + "\n\n" : "") + \`USER STATS DATA UNTUK USER INI (\${targetUser.username}):
+Total pesan yang dikirim: \${targetUser.messageCount} pesan.
+Pertama kali aktif: \${targetUser.firstMessage}
+Terakhir aktif: \${targetUser.lastMessage}
+Beri tahu user statistik tersebut dengan gaya bahasa khasmu. JAWAB SEMUA DETAILNYA, JANGAN BERAKTING TIDAK TAHU.\`;
+          } else if (!isAskingInfo) {
+            knowledge = (knowledge ? knowledge + "\n\n" : "") + \`Info: Tidak ada data kontribusi untuk target tersebut di system. (Sampaikan ke user bahwa dia tidak ada di sistem kontribusi/belum terdata).\`;
+          }
+        }
+      }
+
       systemPrompt = buildRitualPrompt(knowledge);
       temp = 0.6;
     } else {
@@ -296,6 +395,7 @@ export default async function handler(req, res) {
     if (choice?.message?.content) {
       reply = choice.message.content;
     } else if (choice?.finish_reason === "length") {
+      console.warn("⚠️ Model hit token limit (finish_reason: length).");
       reply = "*mEow* ... otakku terlalu penuh mikir, coba tanya lagi dengan lebih singkat! 🐱";
     }
 
